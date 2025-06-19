@@ -1,15 +1,24 @@
 import UIKit
+import SnapKit
 
 class ViewController: UIViewController {
 
     // Элементы интерфейса
-    var resultLabel = UILabel()
-    var buttons: [UIButton] = []
+    private lazy var resultLabel: UILabel = {
+        let label = UILabel()
+        label.text = "0"
+        label.textAlignment = .right
+        label.font = UIFont.systemFont(ofSize: 40)
+        label.backgroundColor = .white
+        return label
+    }()
+
+    private var buttons: [UIButton] = []
 
     // Переменные для логики калькулятора
-    var currentInput = ""
-    var firstNumber: Double = 0
-    var currentOperation: String = ""
+    private var currentInput = ""
+    private var firstNumber: Double = 0
+    private var currentOperation: String = ""
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -17,25 +26,17 @@ class ViewController: UIViewController {
     }
 
     // Настройка интерфейса
-    func setupUI() {
-        // Настройка фона
+    private func setupUI() {
         view.backgroundColor = .white
-
-        // Настройка resultLabel
-        resultLabel.text = "0"
-        resultLabel.textAlignment = .right
-        resultLabel.font = UIFont.systemFont(ofSize: 40)
-        resultLabel.backgroundColor = .white
-        resultLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(resultLabel)
 
-        // Добавление ограничений для resultLabel
-        NSLayoutConstraint.activate([
-            resultLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 20),
-            resultLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 20),
-            resultLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            resultLabel.heightAnchor.constraint(equalToConstant: 80)
-        ])
+        // Привязка resultLabel с помощью SnapKit
+        resultLabel.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.equalToSuperview().offset(-20)
+            make.height.equalTo(80)
+        }
 
         // Создание кнопок
         let buttonTitles = ["7", "8", "9", "/",
@@ -45,26 +46,18 @@ class ViewController: UIViewController {
         var row = 0
         var column = 0
 
-        for title in buttonTitles {
-            let button = UIButton(type: .system)
-            button.setTitle(title, for: .normal)
-            button.titleLabel?.font = UIFont.systemFont(ofSize: 24)
-            button.backgroundColor = .darkGray
-            button.setTitleColor(.white, for: .normal)
-            button.layer.cornerRadius = 10
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
-
+        buttonTitles.forEach { title in
+            let button = createButton(title: title)
             view.addSubview(button)
             buttons.append(button)
 
-            // Добавление ограничений для кнопок
-            NSLayoutConstraint.activate([
-                button.widthAnchor.constraint(equalToConstant: 80),
-                button.heightAnchor.constraint(equalToConstant: 80),
-                button.topAnchor.constraint(equalTo: resultLabel.bottomAnchor, constant: 20 + CGFloat(row) * 90),
-                button.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: CGFloat(column) * 90 + 20)
-            ])
+            // Привязка кнопок с помощью SnapKit
+            button.snp.makeConstraints { make in
+                make.width.equalTo(80)
+                make.height.equalTo(80)
+                make.top.equalTo(resultLabel.snp.bottom).offset(20 + CGFloat(row) * 90)
+                make.leading.equalToSuperview().offset(CGFloat(column) * 90 + 20)
+            }
 
             column += 1
             if column > 3 {
@@ -74,23 +67,33 @@ class ViewController: UIViewController {
         }
     }
 
+    // Создание кнопки
+    private func createButton(title: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = UIFont.systemFont(ofSize: 24)
+        button.backgroundColor = .darkGray
+        button.setTitleColor(.white, for: .normal)
+        button.layer.cornerRadius = 10
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(buttonTapped(_:)), for: .touchUpInside)
+        return button
+    }
+
     // Обработка нажатий на кнопки
-    @objc func buttonTapped(_ sender: UIButton) {
+    @objc private func buttonTapped(_ sender: UIButton) {
         guard let title = sender.titleLabel?.text else { return }
 
         if let number = Int(title) {
-            // Обработка цифр
             currentInput += String(number)
             resultLabel.text = currentInput
         } else if ["+", "-", "*", "/"].contains(title) {
-            // Обработка операций
             if !currentInput.isEmpty {
                 firstNumber = Double(currentInput) ?? 0
                 currentOperation = title
                 currentInput = ""
             }
         } else if title == "=" {
-            // Обработка результата
             if !currentInput.isEmpty {
                 let secondNumber = Double(currentInput) ?? 0
                 var result = 0.0
@@ -109,7 +112,6 @@ class ViewController: UIViewController {
                 currentOperation = ""
             }
         } else if title == "C" {
-            // Очистка поля
             currentInput = ""
             firstNumber = 0
             currentOperation = ""
@@ -117,5 +119,3 @@ class ViewController: UIViewController {
         }
     }
 }
-
-
